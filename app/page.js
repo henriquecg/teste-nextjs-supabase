@@ -1,69 +1,49 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client';
 
 export default function Home() {
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>
-            To get started, edit the{" "}
-            <code className={styles.code}>page.js</code> file.
-          </h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div style={estilos.container}>
+      <div style={estilos.card}>
+        <h1 style={estilos.titulo}>Painel do Sistema</h1>
+        <p style={estilos.subtitulo}>Bem-vindo! Escolha uma das opções abaixo para gerenciar o sistema.</p>
+        
+        <a href="/clientes/lista" style={estilos.botaoAcesso}>
+          Acessar Lista de Clientes →
+        </a>
+      </div>
     </div>
   );
 }
+
+const estilos = {
+  container: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: '100vh',
+    backgroundColor: '#f7fafc',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  },
+  card: {
+    backgroundColor: '#ffffff',
+    padding: '40px',
+    borderRadius: '12px',
+    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+    textAlign: 'center',
+    maxWidth: '400px',
+    width: '100%',
+    border: '1px solid #e2e8f0',
+  },
+  titulo: { fontSize: '26px', fontWeight: '700', color: '#2d3748', margin: '0 0 10px 0' },
+  subtitulo: { fontSize: '15px', color: '#718096', marginBottom: '30px', lineHeight: '1.5' },
+  botaoAcesso: {
+    display: 'block',
+    padding: '14px',
+    backgroundColor: '#3182ce',
+    color: '#ffffff',
+    textDecoration: 'none',
+    borderRadius: '8px',
+    fontWeight: '600',
+    transition: 'background-color 0.2s',
+  }
+};
