@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '../../../supabaseClient'; // Voltando 3 níveis para achar o arquivo na raiz
+import { supabase } from '../../../supabaseClient';
 
 export default function ListaClientes() {
   const [clientes, setClientes] = useState([]);
@@ -18,9 +18,32 @@ export default function ListaClientes() {
       if (error) throw error;
       setClientes(data || []);
     } catch (error) {
-      console.error(error.message);
+      console.error('Erro ao buscar:', error.message);
     } finally {
       setCarregandoLista(false);
+    }
+  };
+
+  // 1. Nova Função para Excluir o Cliente no Supabase
+  const lidarComExclusao = async (id, nome) => {
+    // Alerta nativo do navegador para confirmar a ação
+    const confirmar = window.confirm(`Tem certeza que deseja excluir o cliente "${nome}"?`);
+    
+    if (!confirmar) return;
+
+    try {
+      const { error } = await supabase
+        .from('clientes')
+        .delete()
+        .eq('id', id); // Garante que só vai deletar o cliente com este ID específico
+
+      if (error) throw error;
+
+      // Atualiza a lista na tela removendo o cliente deletado sem precisar recarregar
+      setClientes(clientes.filter(cliente => cliente.id !== id));
+      alert('✨ Cliente excluído com sucesso!');
+    } catch (error) {
+      alert(`❌ Erro ao excluir: ${error.message}`);
     }
   };
 
@@ -48,23 +71,30 @@ export default function ListaClientes() {
         ) : (
           <div style={estilos.listaContainer}>
             {clientes.map((cliente) => (
-			  <div key={cliente.id} style={estilos.itemCliente}>
-				<div>
-				  <h4 style={estilos.clienteNome}>{cliente.nome}</h4>
-				  <p style={estilos.clienteDetalhe}>CPF: {cliente.cpf}</p>
-				  {/* Exibindo a idade de forma discreta embaixo */}
-				  <span style={{ fontSize: '12px', color: '#4a5568', fontWeight: '500' }}>{cliente.idade} anos</span>
-				</div>
-				
-				{/* NOVO: Link para editar passando o ID do cliente por parâmetro */}
-				<a 
-				  href={`/clientes/cadastro?id=${cliente.id}`} 
-				  style={estilos.botaoEditar}
-				>
-				  Editar
-				</a>
-			  </div>
-			))}
+              <div key={cliente.id} style={estilos.itemCliente}>
+                <div>
+                  <h4 style={estilos.clienteNome}>{cliente.nome}</h4>
+                  <p style={estilos.clienteDetalhe}>CPF: {cliente.cpf}</p>
+                  <span style={{ fontSize: '12px', color: '#4a5568', fontWeight: '500' }}>{cliente.idade} anos</span>
+                </div>
+                
+                {/* Bloco de botões de Ação (Editar e Excluir) */}
+                <div style={estilos.acoesGrupo}>
+                  <a 
+                    href={`/clientes/cadastro?id=${cliente.id}`} 
+                    style={estilos.botaoEditar}
+                  >
+                    Editar
+                  </a>
+                  <button 
+                    onClick={() => lidarComExclusao(cliente.id, cliente.nome)} 
+                    style={estilos.botaoExcluir}
+                  >
+                    Excluir
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -85,19 +115,28 @@ const estilos = {
   itemCliente: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', backgroundColor: '#f7fafc', borderRadius: '8px', border: '1px solid #e2e8f0' },
   clienteNome: { margin: '0 0 4px 0', fontSize: '16px', fontWeight: '600', color: '#2d3748' },
   clienteDetalhe: { margin: 0, fontSize: '13px', color: '#718096' },
-  badgeIdade: { backgroundColor: '#e2e8f0', color: '#4a5568', padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '600' },
   
-	// Adicione isto no final do objeto de estilos da sua LISTA:
-	botaoEditar: {
-	  padding: '6px 12px',
-	  backgroundColor: '#edf2f7',
-	  color: '#4a5568',
-	  textDecoration: 'none',
-	  borderRadius: '6px',
-	  fontSize: '13px',
-	  fontWeight: '600',
-	  border: '1px solid #cbd5e0',
-	  transition: 'background-color 0.2s',
-	}
-
+  // Estilos dos botões
+  acoesGrupo: { display: 'flex', gap: '8px', alignItems: 'center' },
+  botaoEditar: {
+    padding: '6px 12px',
+    backgroundColor: '#edf2f7',
+    color: '#4a5568',
+    textDecoration: 'none',
+    borderRadius: '6px',
+    fontSize: '13px',
+    fontWeight: '600',
+    border: '1px solid #cbd5e0',
+  },
+  botaoExcluir: {
+    padding: '6px 12px',
+    backgroundColor: '#fff5f5',
+    color: '#e53e3e',
+    border: '1px solid #fed7d7',
+    borderRadius: '6px',
+    fontSize: '13px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'background-color 0.2s',
+  }
 };
