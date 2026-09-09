@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation'; // Adicionados recursos de navegação do Next.js
+import { useState, useEffect, Suspense } from 'react'; // 1. Adicionado o Suspense aqui
+import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '../../../supabaseClient';
 
-export default function CadastroCliente() {
+// Criamos um subcomponente interno que contém o formulário real
+function FormularioCadastro() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const idCliente = searchParams.get('id'); // Pega o '?id=...' da URL, se existir
+  const idCliente = searchParams.get('id');
 
   const [nome, setNome] = useState('');
   const [idade, setIdade] = useState('');
@@ -15,7 +16,6 @@ export default function CadastroCliente() {
   const [carregando, setCarregando] = useState(false);
   const [mensagem, setMensagem] = useState({ tipo: '', texto: '' });
 
-  // 1. Efeito para carregar os dados se for uma EDIÇÃO
   useEffect(() => {
     if (idCliente) {
       const carregarDadosCliente = async () => {
@@ -24,7 +24,7 @@ export default function CadastroCliente() {
             .from('clientes')
             .select('*')
             .eq('id', idCliente)
-            .single(); // Traz apenas um único registro
+            .single();
 
           if (error) throw error;
 
@@ -52,7 +52,6 @@ export default function CadastroCliente() {
     }
   };
 
-  // 2. Função de Envio Híbrida (Salvar ou Atualizar)
   const lidarComEnvio = async (e) => {
     e.preventDefault();
     setCarregando(true);
@@ -66,30 +65,25 @@ export default function CadastroCliente() {
 
     try {
       if (idCliente) {
-        // --- MODO EDIÇÃO (.update) ---
         const { error } = await supabase
           .from('clientes')
           .update({ nome, idade: parseInt(idade), cpf })
-          .eq('id', idCliente); // Garante que só altera esse cliente específico
+          .eq('id', idCliente);
 
         if (error) throw error;
         setMensagem({ tipo: 'sucesso', texto: '✨ Cadastro atualizado com sucesso!' });
       } else {
-        // --- MODO NOVO CADASTRO (.insert) ---
         const { error } = await supabase
           .from('clientes')
           .insert([{ nome, idade: parseInt(idade), cpf }]);
 
         if (error) throw error;
         setMensagem({ tipo: 'sucesso', texto: '✨ Cliente cadastrado com sucesso!' });
-        
-        // Limpa os campos após salvar um novo
         setNome('');
         setIdade('');
         setCpf('');
       }
 
-      // Redireciona de volta para a lista após 1.5 segundos para o usuário ver o resultado
       setTimeout(() => {
         router.push('/clientes/lista');
       }, 1500);
@@ -107,7 +101,6 @@ export default function CadastroCliente() {
 
       <div style={estilos.card}>
         <div style={estilos.header}>
-          {/* Altera o título dinamicamente de acordo com o modo */}
           <h2 style={estilos.titulo}>{idCliente ? 'Editar Cliente' : 'Novo Cliente'}</h2>
           <p style={estilos.subtitulo}>
             {idCliente ? 'Modifique os dados abaixo para atualizar o registro.' : 'Preencha para salvar no banco de dados.'}
@@ -130,7 +123,6 @@ export default function CadastroCliente() {
             <input type="text" value={cpf} onChange={lidarComCpf} placeholder="000.000.000-00" required style={estilos.input} />
           </div>
 
-          {/* Altera o texto do botão dinamicamente */}
           <button type="submit" disabled={carregando} style={{ ...estilos.botao, backgroundColor: carregando ? '#a0aec0' : '#3182ce', cursor: carregando ? 'not-allowed' : 'pointer' }}>
             {carregando ? 'Processando...' : idCliente ? 'Atualizar Cadastro' : 'Salvar Cadastro'}
           </button>
@@ -146,7 +138,15 @@ export default function CadastroCliente() {
   );
 }
 
-// Função auxiliar para cores de alertas
+// 2. Exportamos a página principal envolvendo o formulário com o <Suspense>
+export default function CadastroCliente() {
+  return (
+    <Suspense fallback={<div style={{ textAlign: 'center', padding: '50px', fontFamily: 'sans-serif' }}>Carregando formulário...</div>}>
+      <FormularioCadastro />
+    </Suspense>
+  );
+}
+
 const messageColor = (tipo) => {
   if (tipo === 'sucesso') return { bg: '#f0fff4', text: '#38a169', border: '#c6f6d5' };
   return { bg: '#fff5f5', text: '#e53e3e', border: '#fed7d7' };
