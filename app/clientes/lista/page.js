@@ -44,13 +44,13 @@ export default function ListaClientes() {
       // Faz o fetch apontando exatamente para o seu servidor Python local
       //const resposta = await fetch('http://localhost:8000/clientes/analisar', {
 	  const resposta = await fetch('https://teste-fastapi-supabase-render.onrender.com/clientes/analisar', {		 
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ cliente_id: String(idCliente) }), // Envia o ID no corpo que o Python espera
-      });
-
+		  method: 'POST',
+		  headers: {
+			'Content-Type': 'application/json',
+			'X-API-Key': process.env.NEXT_PUBLIC_API_TOKEN_SECRETO // Guarde isso no .env da Vercel
+		  },
+		  body: JSON.stringify({ cliente_id: String(idCliente) }),
+		});
       if (!resposta.ok) {
         throw new Error('Erro na resposta do servidor Python');
       }
@@ -70,19 +70,25 @@ export default function ListaClientes() {
     }
   };
 
-  const lidarComExclusao = async (id, nome) => {
-    const confirmar = window.confirm(`Tem certeza que deseja excluir o cliente "${nome}"?`);
-    if (!confirmar) return;
+	const lidarComExclusao = async (id, nome) => {
+	  const confirmar = window.confirm(`Tem certeza que deseja excluir o cliente "${nome}"?`);
+	  if (!confirmar) return;
 
-    try {
-      const { error } = await supabase.from('clientes').delete().eq('id', id);
-      if (error) throw error;
-      setClientes(clientes.filter(cliente => cliente.id !== id));
-      alert('✨ Cliente excluído com sucesso!');
-    } catch (error) {
-      alert(`❌ Erro ao excluir: ${error.message}`);
-    }
-  };
+	  try {
+		// Agora chamamos o Python protegido para fazer a exclusão
+		const resposta = await fetch(`https://teste-fastapi-supabase-render.onrender.com/clientes/excluir/${id}`, {
+		  method: 'DELETE'
+		});
+
+		if (!resposta.ok) throw new Error('Erro ao deletar via servidor.');
+
+		// Atualiza a lista na tela
+		setClientes(clientes.filter(cliente => cliente.id !== id));
+		alert('✨ Cliente excluído com segurança!');
+	  } catch (error) {
+		alert(`❌ Erro: ${error.message}`);
+	  }
+	};
 
   useEffect(() => {
     buscarClientes();
