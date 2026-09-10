@@ -8,10 +8,8 @@ export default function ListaClientes() {
   const [carregandoLista, setCarregandoLista] = useState(true);
   const [isComputador, setIsComputador] = useState(false);
 
-  // 🟢 Novo estado para armazenar os resultados das análises vindas do Python
-  // O formato será: { "id_do_cliente": "Aprovado" ou "Bloqueado" }
   const [analises, setAnalises] = useState({});
-  const [analisandoId, setAnalisandoId] = useState(null); // Controla qual item está processando
+  const [analisandoId, setAnalisandoId] = useState(null);
 
   useEffect(() => {
     const checarTamanho = () => setIsComputador(window.innerWidth > 768);
@@ -37,58 +35,48 @@ export default function ListaClientes() {
     }
   };
 
-  // 🟢 NOVA FUNÇÃO: Dispara a chamada para a API FastAPI em Python
+  // 🔄 Chama a nossa API Route interna para Analisar com segurança
   const chamarAnalisePython = async (idCliente) => {
+    if (!idCliente) return;
     setAnalisandoId(idCliente);
     try {
-      // Faz o fetch apontando exatamente para o seu servidor Python local
-      //const resposta = await fetch('http://localhost:8000/clientes/analisar', {
-	  const resposta = await fetch('https://teste-fastapi-supabase-render.onrender.com/clientes/analisar', {		 
-		  method: 'POST',
-		  headers: {
-			'Content-Type': 'application/json',
-			'X-API-Key': process.env.API_TOKEN_SECRETO // Guarde isso no .env da Vercel
-		  },
-		  body: JSON.stringify({ cliente_id: String(idCliente) }),
-		});
-      if (!resposta.ok) {
-        throw new Error('Erro na resposta do servidor Python');
-      }
+      const resposta = await fetch('/api/clientes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cliente_id: String(idCliente), acao: 'analisar' }),
+      });
+
+      if (!resposta.ok) throw new Error('Falha na autenticação ou processamento.');
 
       const dados = await resposta.json();
-      
-      // Guarda o resultado ("Aprovado" ou "Bloqueado") associado ao ID do cliente
-      setAnalises(prev => ({
-        ...prev,
-        [idCliente]: dados.analise
-      }));
-
+      setAnalises(prev => ({ ...prev, [idCliente]: dados.analise }));
     } catch (error) {
-      alert(`❌ Erro ao conectar com a API Python: ${error.message}\nVerifique se o uvicorn está rodando no terminal.`);
+      alert(`❌ Erro: ${error.message}`);
     } finally {
       setAnalisandoId(null);
     }
   };
 
-	const lidarComExclusao = async (id, nome) => {
-	  const confirmar = window.confirm(`Tem certeza que deseja excluir o cliente "${nome}"?`);
-	  if (!confirmar) return;
+  // 🔄 Chama a nossa API Route interna para Excluir com segurança
+  const lidarComExclusao = async (id, nome) => {
+    const confirmar = window.confirm(`Tem certeza que deseja excluir o cliente "${nome}"?`);
+    if (!confirmar) return;
 
-	  try {
-		// Agora chamamos o Python protegido para fazer a exclusão
-		const resposta = await fetch(`https://teste-fastapi-supabase-render.onrender.com/clientes/excluir/${id}`, {
-		  method: 'DELETE'
-		});
+    try {
+      const respuesta = await fetch('/api/clientes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cliente_id: String(id), acao: 'excluir' })
+      });
 
-		if (!resposta.ok) throw new Error('Erro ao deletar via servidor.');
+      if (!respuesta.ok) throw new Error('Acesso negado ou erro no servidor.');
 
-		// Atualiza a lista na tela
-		setClientes(clientes.filter(cliente => cliente.id !== id));
-		alert('✨ Cliente excluído com segurança!');
-	  } catch (error) {
-		alert(`❌ Erro: ${error.message}`);
-	  }
-	};
+      setClientes(clientes.filter(cliente => cliente.id !== id));
+      alert('✨ Cliente excluído com segurança nível corporativo!');
+    } catch (error) {
+      alert(`❌ Erro de Segurança: ${error.message}`);
+    }
+  };
 
   useEffect(() => {
     buscarClientes();
@@ -104,7 +92,7 @@ export default function ListaClientes() {
       <div style={{ ...estilos.card, maxWidth: isComputador ? '850px' : '450px' }}>
         <div style={estilos.header}>
           <h2 style={estilos.titulo}>Clientes Cadastrados</h2>
-          <p style={estilos.subtitulo}>Registros armazenados no Supabase integrados ao Python.</p>
+          <p style={estilos.subtitulo}>Registros protegidos via ponte segura de backend.</p>
         </div>
 
         {carregandoLista ? (
@@ -119,7 +107,6 @@ export default function ListaClientes() {
                   <h4 style={estilos.clienteNome}>{cliente.nome}</h4>
                   <p style={estilos.clienteDetalhe}><strong>CPF:</strong> {cliente.cpf}</p>
                   
-                  {/* 🟢 Exibe o status dinâmico calculado pelo Python se ele existir */}
                   {analises[cliente.id] && (
                     <span style={{
                       ...estilos.badgeStatus,
@@ -134,12 +121,7 @@ export default function ListaClientes() {
                 <div style={estilos.acoesGrupo}>
                   <div style={estilos.badgeIdade}>{cliente.idade} anos</div>
                   
-                  {/* 🟢 NOVO: Botão para disparar a chamada ao Python */}
-                  <button
-                    onClick={() => chamarAnalisePython(cliente.id)}
-                    disabled={analisandoId === cliente.id}
-                    style={estilos.botaoAnalisar}
-                  >
+                  <button onClick={() => chamarAnalisePython(cliente.id)} disabled={analisandoId === cliente.id} style={estilos.botaoAnalisar}>
                     {analisandoId === cliente.id ? '...' : 'Analisar'}
                   </button>
 
@@ -170,11 +152,8 @@ const estilos = {
   clienteDetalhe: { margin: 0, fontSize: '14px', color: '#4a5568' },
   acoesGrupo: { display: 'flex', gap: '8px', alignItems: 'center' },
   badgeIdade: { backgroundColor: '#e2e8f0', color: '#4a5568', padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600' },
-  
-  // 🟢 Estilos dos novos botões e badges
   botaoAnalisar: { padding: '6px 12px', backgroundColor: '#ebf8ff', color: '#2b6cb0', border: '1px solid #bee3f8', borderRadius: '6px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' },
   badgeStatus: { padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase' },
-  
   botaoEditar: { padding: '6px 12px', backgroundColor: '#edf2f7', color: '#4a5568', textDecoration: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: '600', border: '1px solid #cbd5e0' },
   botaoExcluir: { padding: '6px 12px', backgroundColor: '#fff5f5', color: '#e53e3e', border: '1px solid #fed7d7', borderRadius: '6px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }
 };
