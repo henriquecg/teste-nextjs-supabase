@@ -47,7 +47,7 @@ export default function ListaClientes() {
 		  method: 'POST',
 		  headers: {
 			'Content-Type': 'application/json',
-			'X-API-Key': process.env.NEXT_PUBLIC_API_TOKEN_SECRETO // Guarde isso no .env da Vercel
+			'X-API-Key': process.env.API_TOKEN_SECRETO // Guarde isso no .env da Vercel
 		  },
 		  body: JSON.stringify({ cliente_id: String(idCliente) }),
 		});
