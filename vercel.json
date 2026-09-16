@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/disparar-ping",
+      "schedule": "*/14 * * * *"
+    }
+  ]
+}
